@@ -52,7 +52,8 @@ async def find_image(request: FindImage):
         if not image_urls:
             print('Error in the bing search')
             raise HTTPException(status_code=404, detail="No images found.")
-
+        elif len(image_urls) > 5:
+            image_urls = image_urls[:5]
         # Step 3: Prepare prompt and make API call
         prompt = (
             f"You are given {len(image_urls)} images represented as base64 strings, "
@@ -191,7 +192,7 @@ async def generate_full_article(request: ArticleRequest):
         logging.info(f"Generated search query: {search_query}")
 
         # Step 2: Fetch images using the search query
-        find_image_request = FindImage(description=search_query, nimages=5)  # You can set nimages to any number you want
+        find_image_request = FindImage(description=search_query, nimages=10)  # You can set nimages to any number you want
         selected_image_url_response = await find_image(find_image_request)
         image_url = selected_image_url_response.url
         logging.info(f"Selected image URL: {image_url}")
