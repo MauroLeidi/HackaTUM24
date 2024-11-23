@@ -54,24 +54,30 @@ def scrape_rss_feed(url: str,limit: Optional[int] = None) -> List[Dict]:
         return []
     
 
-def get_rss_articles():
-    rss_url = "https://rss.app/feeds/MLuDKqkwFtd2tuMr.xml"
-    rss_articles = scrape_rss_feed(rss_url,limit=2)
-    for article in rss_articles:
-        article_content = extract_article_content(article['link'])
-        article['full_content'] = article_content
-        article["type"] = "rss"
-
-    rss_results = batch_validate_articles(rss_articles)
-
-    # Print results
-    print(f"Found {len(rss_results['valid_articles'])} valid articles")
-    print(f"Found {len(rss_results['invalid_articles'])} invalid articles")
-
+def get_rss_articles(use_litellm: bool = False) -> List[Dict]:
+    rss_urls  = [
+        "https://rss.app/feeds/MLuDKqkwFtd2tuMr.xml",
+        "https://www.autobild.de/rss/22590661.xml",
+        "https://rss.app/feeds/u6rcvfy6PTSf9vQ4.xml"
+    ]
     normalized_articles = []
-    for article in rss_results['valid_articles']:
-        normalized = normalize_article(article, 'rss')
-        if normalized:
-            normalized_articles.append(normalized)
+    for rss_url in rss_urls:
+        rss_articles = scrape_rss_feed(rss_url)
+        for article in rss_articles:
+            article_content = extract_article_content(article['link'])
+            article['full_content'] = article_content
+            article["type"] = "rss"
+
+        rss_results = batch_validate_articles(rss_articles, use_litellm=use_litellm)
+
+        # Print results
+        print(f"Found {len(rss_results['valid_articles'])} valid articles")
+        print(f"Found {len(rss_results['invalid_articles'])} invalid articles")
+
+        
+        for article in rss_results['valid_articles']:
+            normalized = normalize_article(article, 'rss')
+            if normalized:
+                normalized_articles.append(normalized)
 
     return normalized_articles

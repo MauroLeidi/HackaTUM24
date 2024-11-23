@@ -10,10 +10,10 @@ import os
 import pandas as pd
 import asyncio
 from tqdm import tqdm
+import time
 
 
-
-async def fill_df_with_feedback_and_summary(path_to_df, save_folder, feedback_only_save_name, feedback_and_summary_save_name, override=False):
+async def fill_df_with_feedback_and_summary(path_to_df, save_folder, feedback_only_save_name, feedback_and_summary_save_name, override=False, sleep_time=1.0):
     df = pd.read_csv(path_to_df)
     dimension_names = list(dimension_name_to_prompt.keys())
     feedbacks = {dim_nam : [] for dim_nam in dimension_names}
@@ -37,7 +37,7 @@ async def fill_df_with_feedback_and_summary(path_to_df, save_folder, feedback_on
             for dim_name, feedback in zip(dimension_names, results):
                 feedbacks[dim_name].append(feedback.critique)
                 feedbacks_scores[dim_name].append(feedback.news_meets_standards)
-                
+            time.sleep(sleep_time)
                 
         for dim_name in dimension_names:
             df[f"critique/{dim_name}"] = feedbacks[dim_name]
@@ -53,10 +53,13 @@ async def fill_df_with_feedback_and_summary(path_to_df, save_folder, feedback_on
     else:
         above_up_to_date_threshold_df = df[df["score/up-to-date"] >= 0]
         summaries = []
+        sleep_every = 10
         for i, row in tqdm(above_up_to_date_threshold_df.iterrows(), total=len(above_up_to_date_threshold_df), desc="Generating Summaries"):
             news_dict = {"content": row["content"], "title": row["title"], "description": row["description"]}
             summary = await generate_summary(news_dict)
             summaries.append(summary.summary)
+            if i % sleep_every == 0:
+                time.sleep(sleep_time)
             
         above_up_to_date_threshold_df["ev_summary"] = summaries
 

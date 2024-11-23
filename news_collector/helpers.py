@@ -8,6 +8,9 @@ import json
 from typing import List, Dict, Optional
 import pandas as pd
 from datetime import datetime
+from summary_and_feedback_generation.utils import get_completion_litellm_for_burda
+import time
+
 
 load_dotenv(override=True)
 
@@ -48,7 +51,7 @@ def extract_article_content(url):
         
 client = OpenAI()
 
-def validate_article(content: Dict) -> Dict:
+def validate_article(content: Dict, use_litellm = False, wait_time = 0.75) -> Dict:
     """
     Validate if the content is a real article using ChatGPT.
     
@@ -70,16 +73,23 @@ def validate_article(content: Dict) -> Dict:
 
     user_prompt = f"""Title: {content.get('title', 'No title')}
     Content: {content.get('full_content', '')}"""
-
+    time.sleep(wait_time)  # To avoid rate limiting
     try:
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
+        completion_kwargs = {
+            "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            temperature=0.1  # Low temperature for more consistent results
-        )
+            "temperature": 0.1  # Low temperature for more consistent results
+        }
+        if use_litellm:
+            completion_fn = get_completion_litellm_for_burda("gpt-4o")
+            response = completion_fn(**completion_kwargs)
+        else:
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                **completion_kwargs,
+            )
         
         # Parse the response
         validation_result = json.loads(response.choices[0].message.content)
@@ -101,7 +111,8 @@ def validate_article(content: Dict) -> Dict:
     return content
 
 def batch_validate_articles(articles: List[Dict], 
-                            confidence_threshold: float = 0.8) -> Dict[str, List[Dict]]:
+                            confidence_threshold: float = 0.8,
+                            use_litellm=False) -> Dict[str, List[Dict]]:
     """
     Validate multiple articles and separate them into valid and invalid.
     
@@ -116,7 +127,7 @@ def batch_validate_articles(articles: List[Dict],
     invalid_articles = []
     
     for article in articles:
-        validated_article = validate_article(article)
+        validated_article = validate_article(article, use_litellm=use_litellm)
         
         if (validated_article['is_valid_article'] and 
             validated_article['validation_confidence'] >= confidence_threshold):
