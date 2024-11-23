@@ -1,1 +1,2 @@
 litellm==1.52.14
+pydantic
