@@ -1,10 +1,11 @@
-import { Pause, Play, ThumbsDown, ThumbsUp, Video, X } from 'lucide-react';
+import { ThumbsDown, ThumbsUp, Video, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import AudioPlayer from './components/AudioPlayer';
 import LoadingScreen from './components/LoadingScreen';
 
 const convertMarkdown = (markdown: string): string => {
   return markdown
-    .replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" width="500" class="max-w-full h-auto my-2" />')
+    .replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" class="w-full h-auto my-2" />')
     .replace(/^# (.*$)/gm, '<h1 class="text-4xl font-serif font-bold my-6 text-black">$1</h1>')
     .replace(/^## (.*$)/gm, '<h2 class="text-2xl font-serif font-bold my-4 text-black">$1</h2>')
     .replace(/^### (.*$)/gm, '<h3 class="text-xl font-serif font-bold my-3 text-black">$1</h3>')
@@ -302,24 +303,12 @@ export default function Home() {
                 <span className="text-sm">Watch Reel</span>
               </button>
               {/* Podcast button */}
-              <button
-                onClick={handlePlayPause}
-                className={`flex items-center space-x-2 px-3 py-1 rounded-full
-                  ${isPlaying ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-200'}
-                  hover:bg-blue-500 transition-colors duration-200`}
-              >
-                {isPlaying ? (
-                  <>
-                    <Pause size={16} />
-                    <span className="text-sm">Pause</span>
-                  </>
-                ) : (
-                  <>
-                    <Play size={16} />
-                    <span className="text-sm">Listen</span>
-                  </>
-                )}
-              </button>
+              <AudioPlayer
+                isPlaying={isPlaying}
+                onPlayPause={handlePlayPause}
+                currentTime={currentTime}
+                duration={duration}
+              />
 
               {/* Rating buttons */}
               <div className="flex items-center space-x-2">

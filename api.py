@@ -138,14 +138,28 @@ async def generate_article(request: ArticleRequest):
 
         Additionally, here is an image URL: {request.image_url}
 
-        Please generate a new article that:
-        - Combines key insights from the three articles into a single, cohesive, and interesting piece. Feel free to select the most interesting information, and filter out what is not necessary.
-        - The article should be informative, engaging, and written in a journalistic style.
-        - Use markdown syntax for the article, including headings, subheadings, and paragraphs.
-        - Insert the image at a location that makes sense, such as in the middle or at the top of the article, where it supports the content.
+        Please generate a new article using this exact markdown structure without any backticks:
+
+        # Main Title
+
+        ![image]({request.image_url})
+
+        Introduction paragraph here.
+
+        ## First Subheading
+        Content for first section.
+
+        ## Second Subheading
+        Content for second section.
+
+        And so on with your article content. The article should:
+        - Combine key insights from the three articles into a single, cohesive piece. Feel free to select the most interesting information, and filter out what is not necessary.
+        - Be informative, engaging, and written in a journalistic style
+        - Use markdown headings (# and ##) for structure
+        - Place the image near the top after the title
         - Use the image in markdown format: `![image]({request.image_url})`.
-        
-        Your output should be a complete article in markdown format, with the image inserted at an appropriate location.
+
+        Important: Do not include any backticks (```) in your response. Output the markdown directly.
         """
 
         # Instantiate the OpenAI client
