@@ -4,10 +4,12 @@ from typing import List
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import requests
-from schemas import SelectedImageIndex,FindImage,SelectedImageUrl
+from schemas import SelectedImageIndex,FindImage,SelectedImageUrl,ArticleRequest,ArticleResponse,SearchQueryResponse
 from dotenv import load_dotenv
 from openai import OpenAI
+from helpers import *
 import logging
+import openai  # Ensure that this import is correct
 
 # Configure logging at the beginning of the script
 logging.basicConfig(level=logging.INFO)
@@ -25,71 +27,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load OpenAI API key
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-BING_API_KEY = os.getenv("BING_API_KEY")
-
-def fetch_images(query: str, num_images: int = 5) -> List[bytes]:
-    """
-    Fetch images from Bing Image Search API, filtering by specific formats.
-
-    Args:
-        query (str): Search query for the images.
-        num_images (int): Number of images to fetch.
-
-    Returns:
-        List[bytes]: List of image byte data for the valid formats.
-    """
-    search_url = "https://api.bing.microsoft.com/v7.0/images/search"
-    headers = {"Ocp-Apim-Subscription-Key": BING_API_KEY}
-
-    # Include filetype filters directly in the query
-    query_with_filetype = query#f"{query}"
-
-    # Use API parameters for additional filtering
-    params = {
-        "q": query_with_filetype,  # Filtered query
-        "count": num_images,       # Number of results
-        "imageType": "Photo",      # Prefer photo images
-        "safeSearch": "Moderate",  # Safe search level
-    }
-
-    response = requests.get(search_url, headers=headers, params=params)
-    if response.status_code != 200:
-        print('Error withing image generation')
-        print(response)
-        raise HTTPException(status_code=500, detail="Failed to fetch images from Bing.")
-
-    results = response.json()
-    image_urls = [img["contentUrl"] for img in results.get("value", [])]
-    print(image_urls)
-    # Valid file extensions to check against
-    valid_extensions = (".png", ".jpeg", ".jpg")
-
-    images = []
-    for url in image_urls:
-        print(f"current url {url} is valid {url.lower().endswith(valid_extensions)}")
-        # Check if the URL ends with a valid image format
-        if url.lower().endswith(valid_extensions):
-            try:
-                images.append(url)
-
-                # Stop if we have enough images
-                if len(images) >= num_images:
-                    break
-            except Exception:
-                continue  # Skip if the image can't be downloaded
-    
-    print('Succesfully returned images urls')
-    print(f"returning the following images urls: {images}")
-    # Ensure we return the number of requested images or fewer if not enough were valid
-    return images
-
-
-# Helper: Convert image bytes to base64
-def convert_to_base64(image_data: bytes) -> str:
-    return base64.b64encode(image_data).decode("utf-8")
-
 # API Endpoint: Process description and return selected image
 @app.post("/find-image/", response_model=SelectedImageIndex)
 async def find_image(request: FindImage):
@@ -102,7 +39,7 @@ async def find_image(request: FindImage):
         nimages (int): Number of images to fetch.
 
     Returns:
-        SelectedImageIndex: Object containing the index of the selected image.
+        SelectedImageUrl: Object containing the url of the selected image.
     """
     try:
         # Step 1: Fetch images
@@ -161,6 +98,106 @@ async def find_image(request: FindImage):
     except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/generate-image-query/", response_model=SearchQueryResponse)
+async def generate_image_query(request: ArticleRequest):
+    """
+    Generates a short description from the article content, suitable for use in a Bing image search.
+    """
+    try:
+        # Use ChatGPT to generate the search query from article content
+        search_query = generate_search_query_from_articles(request.articles)
+        
+        # Return the search query as part of the response
+        return SearchQueryResponse(search_query=search_query)
+    
+    except Exception as e:
+        logging.error(f"Error occurred while generating search query: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error generating image search query.")
+
+    
+@app.post("/generate-article/", response_model=ArticleResponse)
+async def generate_article(request: ArticleRequest):
+    """
+    Generate a new article by combining content from multiple articles and inserting an image.
+    """
+    try:
+        # Prepare the prompt for ChatGPT
+        prompt = f"""
+        You are a skilled journalist tasked with writing an article for an online newspaper that specializes in Electric Vehicle (EV) content. Your goal is to create a new and engaging article that combines the information from the following articles. 
+
+        The articles are as follows:
+        
+        {request.articles}
+
+        Additionally, here is an image URL: {request.image_url}
+
+        Please generate a new article that:
+        - Combines key insights from the three articles into a single, cohesive, and interesting piece. Feel free to select the most interesting information, and filter out what is not necessary.
+        - The article should be informative, engaging, and written in a journalistic style.
+        - Use markdown syntax for the article, including headings, subheadings, and paragraphs.
+        - Insert the image at a location that makes sense, such as in the middle or at the top of the article, where it supports the content.
+        - Use the image in markdown format: `![image]({request.image_url})`.
+        
+        Your output should be a complete article in markdown format, with the image inserted at an appropriate location.
+        """
+
+        # Instantiate the OpenAI client
+        client = OpenAI()
+
+        # Make the API call to generate the article
+        logging.info("Sending request to OpenAI API.")
+        response = client.beta.chat.completions.parse(
+            model="gpt-4o",
+            messages=[
+                {"role": "user", "content": [{"type": "text", "text": prompt}]},
+            ]
+        )
+        print(response)
+        # Extract the generated article
+        article = response.choices[0].message.content.strip()  # Directly access 'content'
+
+        return ArticleResponse(article=article)
+
+    except Exception as e:
+        logging.error(f"Error occurred: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error generating article.")
+
+# API Endpoint: Process description and return selected image
+@app.post("/generate-full-article/", response_model=ArticleResponse)
+async def generate_full_article(request: ArticleRequest):
+    """
+    Generate a full article by:
+    1. Generating the search query based on the article content.
+    2. Fetching images using the search query.
+    3. Generating a markdown article with the image included.
+
+    Args:
+    A ArticleRequest containing:
+        articles (str): Text content of multiple articles.
+
+    Returns:
+    ArticleResponse: Object containing the markdown of the generated article with image.
+    """
+    try:
+        # Step 1: Generate the search query from the articles
+        search_query_response = await generate_image_query(request)
+        search_query = search_query_response.search_query
+        logging.info(f"Generated search query: {search_query}")
+
+        # Step 2: Fetch images using the search query
+        find_image_request = FindImage(description=search_query, nimages=5)  # You can set nimages to any number you want
+        selected_image_url_response = await find_image(find_image_request)
+        image_url = selected_image_url_response.url
+        logging.info(f"Selected image URL: {image_url}")
+
+        # Step 3: Generate the final markdown article using the articles and the image URL
+        article_response = await generate_article(ArticleRequest(articles=request.articles, image_url=image_url))
+        return article_response
+    
+    except Exception as e:
+        logging.error(f"Error occurred in generating full article: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error generating full article.")
 
 
 # Run the FastAPI server
