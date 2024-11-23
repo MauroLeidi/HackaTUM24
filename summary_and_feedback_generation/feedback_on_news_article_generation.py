@@ -67,7 +67,7 @@ async def fill_df_with_feedback_and_summary(path_to_df, save_folder, feedback_on
 
 
 if __name__ == "__main__":
-    override = False
+    override = True
     path_to_df = "data/news_articles.csv"
     save_folder = "data"
     feedback_only_save_name = "news_articles_with_feedback.csv"

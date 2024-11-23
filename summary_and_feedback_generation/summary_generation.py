@@ -18,6 +18,7 @@ As output I would like you to provide the following in the format of a JSON:
 {
     "summary": "Your summary", # The summary of the article
 }
+Note that articles may be provided in various languages but keep your critique in English.
 """
 
 ### FULL USER PROMPT TEMPLATE ###

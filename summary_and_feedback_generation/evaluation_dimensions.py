@@ -152,6 +152,11 @@ FILTERING_USER_PROMPT_TEMPLATE = \
 <CONTENT> {{content}} <\CONTENT>
 <\ARTICLE>
 """
+
+EVAL_DIMENSION_TEMPLATE = \
+"""
+<EVALUATION DIMENSION> {{eval_dimension}} <\EVALUATION DIMENSION>
+"""
 #### DICTIONARY OF PROMPTS TO SIMPLIFY CALL ####
 dimension_name_to_prompt = {
     "originality-value-purpose": ORIGINALITY_INSTRUCTION,
@@ -198,6 +203,24 @@ async def get_feedback(news_dict: Dict[str,Any], eval_dimension_name: str, as_qa
     
     return NewsRating(**json.loads(reply.choices[0].message.content))
 
+def textgrad_get_feedback(user_prompt, eval_dimension_name: str, as_qa: bool = True) -> Dict:
+    dict_of_interest = dimension_name_to_prompt_qa if as_qa else dimension_name_to_prompt
+    
+    dimension_prompt = dict_of_interest.get(eval_dimension_name.lower(), None)
+    prompt = Template(EVAL_DIMENSION_TEMPLATE).render(
+        eval_dimension = dimension_prompt,
+    )
+    
+    user_prompt = prompt + user_prompt.value
+    
+    completion_fn = get_completion_litellm_for_burda("gpt-4o", async_f = False)
+    
+    reply = completion_fn(
+        messages=[{"role": "system", "content": FILTERING_SYSTEM_PROMPT}, {"role": "user", "content": user_prompt}],
+        response_format=NewsRating,
+    )
+    
+    return NewsRating(**json.loads(reply.choices[0].message.content))
 
 if __name__ == "__main__":
     

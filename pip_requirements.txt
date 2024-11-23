@@ -4,4 +4,8 @@ beautifulsoup4
 lxml_html_clean
 python-dotenv
 pandas
-newspaper3k 
+newspaper3k
+textgrad
+numpy
+scikit-learn
+matplotlib
