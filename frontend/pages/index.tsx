@@ -1,7 +1,6 @@
 import { Pause, Play, ThumbsDown, ThumbsUp, Video, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-
-
+import LoadingScreen from './components/LoadingScreen';
 
 const convertMarkdown = (markdown: string): string => {
   return markdown
@@ -92,25 +91,25 @@ export default function Home() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const articles = [
-    { file: 'article.txt', audio: 'test_audio.wav', reel: 'https://cdn.creatomate.com/renders/5fe45a4e-651a-4999-bfec-df6991461051.mp4' },
+    { file: 'article.txt', audio: 'northvolt_podcast.wav', reel: 'https://cdn.creatomate.com/renders/d6a339c9-b84d-4168-9627-b494915d759f.mp4' },
     { file: 'zio.txt', audio: 'test_audio.wav', reel: 'https://cdn.creatomate.com/renders/5fe45a4e-651a-4999-bfec-df6991461051.mp4' },
     // Add more articles as needed
   ];
-  const generateArticle = async (articleFile: string) => {
+  const generateArticle = async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      //const response = await fetch('http://localhost:8000/get_article');
-      //if (!response.ok) throw new Error('Failed to fetch article');
-      //const data = await response.json();
-      //setArticle(data);
-      const response = await fetch(`/${articleFile}`);
+      const response = await fetch('http://127.0.0.1:8000/next-article/');
       if (!response.ok) throw new Error('Failed to fetch article');
-      const text = await response.text();
+      const data = await response.json();
+
+      /* const response = await fetch(`/${articleFile}`);
+      if (!response.ok) throw new Error('Failed to fetch article');
+      const text = await response.text(); */
       setArticle({
         title: "Article from Text File",
-        content: text,
+        content: data.article,
         author: "Unknown",
         date: new Date().toISOString().split('T')[0],
         summary: "This is an article fetched from a text file in the public folder."
@@ -134,7 +133,7 @@ export default function Home() {
     // Update index and load next article
     const nextIndex = (currentArticleIndex + 1) % articles.length;
     setCurrentArticleIndex(nextIndex);
-    await generateArticle(articles[nextIndex].file);
+    await generateArticle();
 
     // Update audio source
     if (audioRef.current) {
@@ -220,17 +219,7 @@ export default function Home() {
 
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-white">
-        {/* Top Navigation */}
-        <nav className="border-b border-gray-300 py-3 px-4 sm:px-6 lg:px-8 bg-black">
-          <div className="flex items-center justify-center">
-            <div className="text-sm text-gray-500"></div>
-            <div className="text-3xl font-serif font-bold">The Burda Forward Times</div>
-          </div>
-        </nav>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   if (error) {
@@ -252,7 +241,7 @@ export default function Home() {
 
         {/* Button */}
         <button
-          onClick={() => generateArticle(articles[0].file)}
+          onClick={() => generateArticle()}
           className="bg-black text-white px-6 py-3 rounded-lg text-lg font-semibold hover:bg-gray-800 transition-colors duration-200"
         >
           Generate Article
