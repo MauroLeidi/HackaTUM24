@@ -6,3 +6,6 @@ class SelectedImageIndex(BaseModel):
 class FindImage(BaseModel):
     description: str
     nimages: int
+
+class SelectedImageUrl(BaseModel):
+    url: str
