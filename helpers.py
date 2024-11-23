@@ -59,7 +59,7 @@ def fetch_images(query: str, num_images: int = 5) -> List[bytes]:
     for url in image_urls:
         print(f"current url {url} is valid {url.lower().endswith(valid_extensions)}")
         # Check if the URL ends with a valid image format
-        if url.lower().endswith(valid_extensions):
+        if url.lower().endswith(valid_extensions) and urlIsAlive(url):
             try:
                 images.append(url)
 
@@ -114,3 +114,13 @@ def generate_search_query_from_articles(articles_content: str) -> str:
     except Exception as e:
         logging.error(f"Error generating search query from OpenAI: {e}")
         raise HTTPException(status_code=500, detail="Error generating image search query.")
+
+def urlIsAlive(image_url):
+    # Send GET request to the image URL
+    try:
+        response = requests.get(image_url)
+    except:
+        return False
+    # Check if the request was successful (status code 200)
+    return response.status_code == 200
+

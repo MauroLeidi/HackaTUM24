@@ -1,5 +1,7 @@
-import { Pause, Play, ThumbsDown, ThumbsUp } from 'lucide-react';
+import { Pause, Play, ThumbsDown, ThumbsUp, Video, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+
+
 
 const convertMarkdown = (markdown: string): string => {
   return markdown
@@ -84,12 +86,14 @@ export default function Home() {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [currentArticleIndex, setCurrentArticleIndex] = useState(0);
+  const [showReel, setShowReel] = useState(false);
+
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const articles = [
-    { file: 'article.txt', audio: 'test_audio.wav' },
-    { file: 'zio.txt', audio: 'test_audio.wav' },
+    { file: 'article.txt', audio: 'test_audio.wav', reel: 'https://cdn.creatomate.com/renders/5fe45a4e-651a-4999-bfec-df6991461051.mp4' },
+    { file: 'zio.txt', audio: 'test_audio.wav', reel: 'https://cdn.creatomate.com/renders/5fe45a4e-651a-4999-bfec-df6991461051.mp4' },
     // Add more articles as needed
   ];
   const generateArticle = async (articleFile: string) => {
@@ -217,8 +221,14 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-2xl">Loading...</div>
+      <div className="min-h-screen bg-white">
+        {/* Top Navigation */}
+        <nav className="border-b border-gray-300 py-3 px-4 sm:px-6 lg:px-8 bg-black">
+          <div className="flex items-center justify-center">
+            <div className="text-sm text-gray-500"></div>
+            <div className="text-3xl font-serif font-bold">The Burda Forward Times</div>
+          </div>
+        </nav>
       </div>
     );
   }
@@ -232,16 +242,25 @@ export default function Home() {
   }
   if (!article) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-8">
+        {/* Logo Image */}
+        <img
+          src="/images.jpeg"
+          alt="Logo"
+          className="w-64 h-auto" // Adjust width as needed
+        />
+
+        {/* Button */}
         <button
           onClick={() => generateArticle(articles[0].file)}
-          className="bg-blue-600 text-white px-6 py-3 rounded-lg text-lg font-semibold hover:bg-blue-500 transition-colors duration-200"
+          className="bg-black text-white px-6 py-3 rounded-lg text-lg font-semibold hover:bg-gray-800 transition-colors duration-200"
         >
           Generate Article
         </button>
       </div>
     );
-  }
+  };
+
 
 
 
@@ -250,10 +269,9 @@ export default function Home() {
     <div className="min-h-screen bg-white">
       {/* Top Navigation */}
       <nav className="border-b border-gray-300 py-3 px-4 sm:px-6 lg:px-8 bg-black">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-center">
           <div className="text-sm text-gray-500"></div>
           <div className="text-3xl font-serif font-bold">The Burda Forward Times</div>
-          <div className="text-sm text-gray-500">Subscribe</div>
         </div>
       </nav>
 
@@ -285,6 +303,14 @@ export default function Home() {
                 className="bg-black text-white px-4 py-1 rounded-full hover:bg-gray-800 transition-colors duration-200 text-sm"
               >
                 Next Article
+              </button>
+              {/* Reel button */}
+              <button
+                onClick={() => setShowReel(true)}
+                className="flex items-center space-x-2 px-3 py-1 rounded-full bg-gray-700 text-gray-200 hover:bg-gray-600 transition-colors duration-200"
+              >
+                <Video size={16} />
+                <span className="text-sm">Watch Reel</span>
               </button>
               {/* Podcast button */}
               <button
@@ -337,9 +363,29 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-gray-300 py-8 mt-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-gray-500">
-          © {new Date().getFullYear()} The New Article Times. All rights reserved.
+          © {new Date().getFullYear()} The Burda Forward Times. All rights reserved.
         </div>
       </footer>
+      {showReel && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-black rounded-lg w-full max-w-[320px] relative"> {/* Reduced from 400px to 320px */}
+            <button
+              onClick={() => setShowReel(false)}
+              className="absolute -top-10 right-0 text-white hover:text-gray-300 transition-colors duration-200"
+            >
+              <X size={24} />
+            </button>
+            <div className="aspect-[9/16] w-full">
+              <iframe
+                src={articles[currentArticleIndex].reel}
+                className="w-full h-full rounded-lg"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div >
   );
 }
