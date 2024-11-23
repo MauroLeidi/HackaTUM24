@@ -67,15 +67,78 @@ The synergy between human creativity and AI capabilities will define the next er
 };
 
 export default function Home() {
-  const [article, setArticle] = useState(sampleArticle);
+  //const [article, setArticle] = useState(sampleArticle);
+  interface Article {
+    title: string;
+    content: string;
+    author: string;
+    date: string;
+    summary: string;
+  }
+
+  const [article, setArticle] = useState<Article | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [rating, setRating] = useState<'up' | 'down' | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [currentArticleIndex, setCurrentArticleIndex] = useState(0);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const articles = [
+    { file: 'article.txt', audio: 'test_audio.wav' },
+    { file: 'zio.txt', audio: 'test_audio.wav' },
+    // Add more articles as needed
+  ];
+  const generateArticle = async (articleFile: string) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      //const response = await fetch('http://localhost:8000/get_article');
+      //if (!response.ok) throw new Error('Failed to fetch article');
+      //const data = await response.json();
+      //setArticle(data);
+      const response = await fetch(`/${articleFile}`);
+      if (!response.ok) throw new Error('Failed to fetch article');
+      const text = await response.text();
+      setArticle({
+        title: "Article from Text File",
+        content: text,
+        author: "Unknown",
+        date: new Date().toISOString().split('T')[0],
+        summary: "This is an article fetched from a text file in the public folder."
+      });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  const handleNextArticle = async () => {
+    // Stop audio if playing
+    if (audioRef.current && isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    }
+
+    // Reset rating
+    setRating(null);
+
+    // Update index and load next article
+    const nextIndex = (currentArticleIndex + 1) % articles.length;
+    setCurrentArticleIndex(nextIndex);
+    await generateArticle(articles[nextIndex].file);
+
+    // Update audio source
+    if (audioRef.current) {
+      audioRef.current.src = articles[nextIndex].audio;
+      setCurrentTime(0);
+    }
+  };
+
 
   // Commented out fetch request for now
 
@@ -95,15 +158,12 @@ export default function Home() {
 
     fetchArticle();*/
 
-    // Create audio element
-    audioRef.current = new Audio('test_audio.wav'); // Update this path to match your asset location
+    audioRef.current = new Audio(articles[currentArticleIndex].audio);
 
-    // Set up audio event listeners
     audioRef.current.addEventListener('timeupdate', handleTimeUpdate);
     audioRef.current.addEventListener('loadedmetadata', handleLoadMetadata);
     audioRef.current.addEventListener('ended', () => setIsPlaying(false));
 
-    // Cleanup
     return () => {
       if (audioRef.current) {
         audioRef.current.removeEventListener('timeupdate', handleTimeUpdate);
@@ -112,8 +172,7 @@ export default function Home() {
         audioRef.current.pause();
       }
     };
-  }, []);
-
+  }, [currentArticleIndex]);
   const handleTimeUpdate = () => {
     if (audioRef.current) {
       setCurrentTime(audioRef.current.currentTime);
@@ -171,14 +230,29 @@ export default function Home() {
       </div>
     );
   }
+  if (!article) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <button
+          onClick={() => generateArticle(articles[0].file)}
+          className="bg-blue-600 text-white px-6 py-3 rounded-lg text-lg font-semibold hover:bg-blue-500 transition-colors duration-200"
+        >
+          Generate Article
+        </button>
+      </div>
+    );
+  }
+
+
+
 
   return (
     <div className="min-h-screen bg-white">
       {/* Top Navigation */}
-      <nav className="border-b border-gray-300 py-3 px-4 sm:px-6 lg:px-8">
+      <nav className="border-b border-gray-300 py-3 px-4 sm:px-6 lg:px-8 bg-black">
         <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-500">{new Date().toLocaleDateString()}</div>
-          <div className="text-xl font-serif">The New Article Times</div>
+          <div className="text-sm text-gray-500"></div>
+          <div className="text-3xl font-serif font-bold">The Burda Forward Times</div>
           <div className="text-sm text-gray-500">Subscribe</div>
         </div>
       </nav>
@@ -187,15 +261,15 @@ export default function Home() {
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Article Header */}
         <header className="mb-12">
-          <h1 className="text-5xl font-serif font-bold mb-4">{article.title}</h1>
+          {/* <h1 className="text-5xl font-serif font-bold mb-4">{article.title}</h1>
           <p className="text-xl text-gray-700 mb-6 font-serif leading-relaxed">
             {article.summary}
-          </p>
+          </p> */}
 
           {/* Author info and controls row */}
           <div className="flex items-center justify-between border-y border-gray-700 py-4 my-4">
             <div className="flex items-center space-x-4 text-sm text-gray-500">
-              <div className="font-medium">By {article.author}</div>
+              <div className="font-medium">By Burda Forward</div>
               <div>|</div>
               <div>{new Date(article.date).toLocaleDateString('en-US', {
                 year: 'numeric',
@@ -205,6 +279,13 @@ export default function Home() {
             </div>
             {/* Podcast and rating controls */}
             <div className="flex items-center space-x-4">
+              {/* Next Article Button */}
+              <button
+                onClick={handleNextArticle}
+                className="bg-black text-white px-4 py-1 rounded-full hover:bg-gray-800 transition-colors duration-200 text-sm"
+              >
+                Next Article
+              </button>
               {/* Podcast button */}
               <button
                 onClick={handlePlayPause}
