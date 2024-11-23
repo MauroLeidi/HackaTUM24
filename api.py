@@ -10,7 +10,12 @@ from openai import OpenAI
 from helpers import *
 import logging
 import openai  # Ensure that this import is correct
+import pandas as pd
 
+# Path to the CSV file
+CSV_PATH = "./data/df_with_embedding_and_sorted_groups.csv"
+# Global variable for tracking the current article group index
+articleIndex = 0
 # Configure logging at the beginning of the script
 logging.basicConfig(level=logging.INFO)
 
@@ -198,6 +203,52 @@ async def generate_full_article(request: ArticleRequest):
     except Exception as e:
         logging.error(f"Error occurred in generating full article: {str(e)}")
         raise HTTPException(status_code=500, detail="Error generating full article.")
+
+
+@app.get("/next-article/", response_model=ArticleResponse)
+async def next_article():
+    """
+    Generate the next article by reading from the CSV file, preparing the input for
+    generate-full-article, and cycling through groups using articleIndex.
+    """
+    global articleIndex  # Access the global variable
+
+    try:
+        # Step 1: Read the CSV file
+        logging.info("Reading CSV file...")
+        df = pd.read_csv(CSV_PATH)
+
+        # Ensure the 'group' and 'content' columns exist
+        if 'group' not in df.columns or 'content' not in df.columns:
+            raise ValueError("CSV must contain 'group' and 'content' columns.")
+
+        # Step 2: Fetch articles for the current group
+        current_group = df[df['group'] == articleIndex]
+        if current_group.empty:
+            raise ValueError(f"No articles found for group {articleIndex}.")
+
+        # Combine content from the group into a single string
+        articles_combined = "\n\n".join(
+            f"title = {row['title']}\ncontent = {row['content']}"
+            for _, row in current_group.iterrows()
+        )
+
+        # Step 3: Increment the global article index (cycle 0-9)
+        articleIndex = (articleIndex + 1) % 10
+        logging.info(f"Moving to the next article group: {articleIndex}")
+
+        # Step 4: Internally call generate-full-article
+        article_request = {
+            "articles": articles_combined,
+            "image_url": ""
+        }
+        full_article = await generate_full_article(ArticleRequest(**article_request))
+
+        return full_article
+
+    except Exception as e:
+        logging.error(f"Error in /next-article endpoint: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to generate the next article.")
 
 
 # Run the FastAPI server
