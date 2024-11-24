@@ -19,7 +19,6 @@ from fastapi import FastAPI, HTTPException
 import requests
 from dotenv import load_dotenv
 from openai import OpenAI
-from helpers import *
 import logging
 
 
