@@ -17,7 +17,7 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 BING_API_KEY = os.getenv("BING_API_KEY")
 
-def fetch_images(query: str, num_images: int = 5) -> List[bytes]:
+def fetch_images(query: str, num_images: int = 10) -> List[bytes]:
     """
     Fetch images from Bing Image Search API, filtering by specific formats.
 
@@ -72,7 +72,7 @@ def fetch_images(query: str, num_images: int = 5) -> List[bytes]:
     print('Succesfully returned images urls')
     print(f"returning the following images urls: {images}")
     # Ensure we return the number of requested images or fewer if not enough were valid
-    return images
+    return images[:5]
 
 
 # Helper: Convert image bytes to base64
