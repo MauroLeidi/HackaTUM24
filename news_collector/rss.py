@@ -2,7 +2,7 @@ import requests
 import xml.etree.ElementTree as ET
 from typing import List, Dict, Optional
 
-from .helpers import batch_validate_articles, extract_article_content, normalize_article
+from utils import batch_validate_articles, extract_article_content, normalize_article
 
 
 def scrape_rss_feed(url: str,limit: Optional[int] = None) -> List[Dict]:

@@ -9,3 +9,4 @@ textgrad
 numpy
 scikit-learn
 matplotlib
+fastapi

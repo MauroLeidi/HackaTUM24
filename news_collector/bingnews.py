@@ -2,7 +2,7 @@ import requests
 from datetime import datetime
 import json
 import os
-from news_collector.helpers import extract_article_content, batch_validate_articles, normalize_article
+from utils import extract_article_content, batch_validate_articles, normalize_article
 
 def get_news(search_term=None, market='en-US', count=3):
     api_key = os.getenv("BING_API_KEY")

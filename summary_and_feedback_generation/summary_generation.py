@@ -1,7 +1,7 @@
 from typing import Dict, Any
 from pydantic import BaseModel
 from jinja2 import Template
-from summary_and_feedback_generation.utils import get_completion_litellm_for_burda
+from utils import get_completion_litellm_for_burda
 import json
 
 class Summary(BaseModel):

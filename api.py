@@ -1,15 +1,11 @@
-import base64
-import os
 from typing import List
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-import requests
 from schemas import SelectedImageIndex,FindImage,SelectedImageUrl,ArticleRequest,ArticleResponse,SearchQueryResponse
 from dotenv import load_dotenv
 from openai import OpenAI
-from helpers import *
+from utils import *
 import logging
-import openai  # Ensure that this import is correct
 import pandas as pd
 
 # Path to the CSV file

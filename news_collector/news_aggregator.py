@@ -1,7 +1,7 @@
 import sys
 sys.path.append("./")
 from news_collector.bingnews import get_bing_news
-from news_collector.helpers import normalize_article
+from utils import normalize_article
 from news_collector.rss import get_rss_articles
 import pandas as pd
 
