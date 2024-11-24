@@ -5,12 +5,12 @@ const AudioPlayer = ({ isPlaying, onPlayPause, currentTime, duration }) => {
     const bars = Array.from({ length: 20 }, (_, i) => {
         // Create varying heights for bars to simulate waveform
         const height = Math.random() * 16 + 8; // Random height between 8-24px
+        const shouldBeBlack = currentTime > 0 && (i * duration) / 20 <= currentTime;
+
         return (
             <div
                 key={i}
-                className={`w-1 rounded-full transition-all duration-700 mx-px ${(i * duration) / 20 <= currentTime
-                    ? 'bg-black'
-                    : 'bg-gray-200'
+                className={`w-1 rounded-full transition-all duration-700 mx-px ${shouldBeBlack ? 'bg-black' : 'bg-gray-200'
                     }`}
                 style={{ height: `${height}px` }}
             />

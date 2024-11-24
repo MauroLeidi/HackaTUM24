@@ -128,39 +128,39 @@ async def generate_article(request: ArticleRequest):
     Generate a new article by combining content from multiple articles and inserting an image.
     """
     try:
-        system_prompt = \
-"""
-You are a skilled journalist tasked with writing an article for an online newspaper that specializes in Electric Vehicle (EV) content. Your goal is to create a new and engaging article that combines the information from the following articles.
-
-Please generate a new article that:
-- Combines key insights from the provided articles into a single, cohesive, and interesting piece. Feel free to select the most interesting information, and filter out what is not necessary.
-- Incorporate unique insights and original analysis by including expert opinions, case studies, or interviews with industry leaders. Include at least two quotes or insights from industry experts or urban planners to add depth and originality. Explore less-discussed topics, such as the socio-economic impacts on diverse urban demographics, the role of EVs in rural areas, and the impact of EVs on urban planning or the role of renewable energy in charging infrastructure.
-- Tailor content for different audience segments by creating sections that cater to specific groups, such as potential EV buyers, environmental advocates, or automotive enthusiasts. Identify and discuss region-specific challenges or opportunities, such as local government incentives or infrastructure limitations.
-- Use up-to-date information and data, mentioning recent model releases, advancements in solid-state batteries, or specific policy changes in major markets. Incorporate recent studies or reports with specific citations and discuss recent policy changes or market predictions to provide a forward-looking perspective.
-- Enhance clarity and structure with interactive elements such as infographics, charts, or sidebars to summarize key points or data. Include interactive elements such as infographics or interactive maps to visualize EV infrastructure growth. Use markdown syntax for these elements to ensure proper formatting.
-- Promote professionalism and transparency by including information about the author's credentials and expertise in the automotive industry. Disclose any use of AI tools or automation in the article's creation, detailing the AI tools used and their specific contributions to the content.
-- Emphasize trust and accuracy by referencing specific studies, data, or expert sources to bolster the article's accuracy and authoritative nature. Ensure all claims are backed by peer-reviewed studies or expert verification. Indicate whether sources for claims were verified by experts or peer-reviewed studies to enhance credibility.
-- Include a section on potential future developments in EV technology and urban planning, supported by expert opinions or forecasts.
-- Simplify technical jargon by providing definitions or a glossary for technical terms like 'solid-state batteries' to ensure accessibility for all readers.
-- Improve clarity by adding a requirement for a summary or key takeaways section at the end to help readers quickly grasp the main points.
-- Place the image near the top after the title
-- Use the image in markdown format: `![image](<URL OF IMAGE HERE>)`.
-
-Important: Do not include any backticks (```) in your response. Output the markdown directly.
-The article should be informative, engaging, and written in a journalistic style. Use markdown syntax for the article, including headings, subheadings, and paragraphs. Insert the image at a location that makes sense, such as in the middle or at the top of the article, where it supports the content. Use the image in markdown format: `![image]<<IMAGE_URL_HERE>>`.
-
-Your output should be a complete article in markdown format, with the image inserted at an appropriate location. The article will be provided <ARTICLE> <\ARTICLE> tags. Within the <ARTICLE> tag there are can also the following tags <TITLE> <\TITLE>, <CONTENT> <\CONTENT> and <DESCRIPTION> <\DESCRIPTION> which will provide the title and content of the article respectively. Note that articles may be provided in various languages but keep your critique in English.
-""" 
-        
         # Prepare the prompt for ChatGPT
-        prompt = \
-f"""
-The articles are as follows:
+        prompt = f"""
+        You are a skilled journalist tasked with writing an article for an online newspaper that specializes in Electric Vehicle (EV) content. Your goal is to create a new and engaging article that combines the information from the following articles. 
 
-{request.articles}
+        The articles are as follows:
+        
+        {request.articles}
 
-Additionally, here is an image URL: {request.image_url}
-"""
+        Additionally, here is an image URL: {request.image_url}
+
+        Please generate a new article using this exact markdown structure without any backticks:
+
+        # Main Title
+
+        ![image]({request.image_url})
+
+        Introduction paragraph here.
+
+        ## First Subheading
+        Content for first section.
+
+        ## Second Subheading
+        Content for second section.
+
+        And so on with your article content. The article should:
+        - Combine key insights from the three articles into a single, cohesive piece. Feel free to select the most interesting information, and filter out what is not necessary.
+        - Be informative, engaging, and written in a journalistic style
+        - Use markdown headings (# and ##) for structure
+        - Place the image near the top after the title
+        - Use the image in markdown format: `![image]({request.image_url})`.
+
+        Important: Do not include any backticks (```) in your response. Output the markdown directly.
+        """
 
         # Instantiate the OpenAI client
         client = OpenAI()
@@ -170,7 +170,6 @@ Additionally, here is an image URL: {request.image_url}
         response = client.beta.chat.completions.parse(
             model="gpt-4o",
             messages=[
-                {"role": "system", "content": [{"type": "text", "text": system_prompt}]},
                 {"role": "user", "content": [{"type": "text", "text": prompt}]},
             ]
         )
